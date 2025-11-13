@@ -13,22 +13,28 @@ class BaseConfig(BaseSettings):
 # Store all environment variables that can be accessed globally
 class GlobalConfig(BaseConfig):
     LOG_LEVEL: str = "INFO"
+    OTEL_PYTHON_LOG_CORRELATION: Optional[bool] = None
+    OPEN_TELEMETRY_ENDPOINT: Optional[str] = None
+    OPEN_TELEMETRY_AUTHORIZATION_TOKEN: Optional[str] = None
 
 
 class DevConfig(GlobalConfig):
     LOG_LEVEL: str = "DEBUG"  # Overrides the global LOG_LEVEL
+    OTEL_PYTHON_LOG_CORRELATION: bool = False
 
     model_config = SettingsConfigDict(env_prefix="DEV_")
 
 
 class TestConfig(GlobalConfig):
     LOG_LEVEL: str = "DEBUG"
+    OTEL_PYTHON_LOG_CORRELATION: bool = False
 
     model_config = SettingsConfigDict(env_prefix="TEST_")
 
 
 class ProdConfig(GlobalConfig):
     LOG_LEVEL: str = "WARNING"
+    OTEL_PYTHON_LOG_CORRELATION: bool = True
 
     model_config = SettingsConfigDict(env_prefix="PROD_")
 

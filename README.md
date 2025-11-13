@@ -8,6 +8,7 @@ Example Python Project showcasing best practices in configuration, logging, test
  - Pytest
  - Pre-Commit
  - Logger
+   - OpenTelemetry Packages
 
 ## Logger
 
@@ -35,6 +36,7 @@ Example Python Project showcasing best practices in configuration, logging, test
 - ERROR
    - When an exception occurs
    - Example: Show that the batch insert failed with an exception
+   - NOTE: Use `logger.exception` as best practice to include the traceback when its unexpected
 - CRITICAL
    - Application cannot continue
    - Example: Show that the database connection could not be created, unable to insert records
