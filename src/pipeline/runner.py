@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterator
 from opentelemetry import trace
 
 from src.pipeline.read.factory import ReaderFactory
+from src.pipeline.validate.validator import Validator
 from src.sources.base import SourceConfig
 
 logger = logging.getLogger(__name__)
@@ -16,15 +17,18 @@ class PipelineRunner:
         self.source_schema = source_config.source_schema
         self.grain = source_config.grain
         self.audit_query = source_config.audit_query
+        self.validator = Validator(self.source_config)
 
-    def read_data(self) -> Iterator[Dict[str, Any]]:
-        logger.info(f"Writing data to stage_{self.source_config.name}")
+    def read_data(self) -> Iterator[list[Dict[str, Any]]]:
+        logger.info(f"Reading data from {self.source_config.name}")
         reader = ReaderFactory.get_reader(self.source_config)
-        for data in reader.read():
-            yield data
+        for batch in reader.read():
+            yield batch
 
-    def validate_data(self, data: list[Dict[str, Any]]):
-        logger.info(f"Validating data for stage_{self.source_config.name}")
+    def validate_data(self, data: Iterator[list[Dict[str, Any]]]):
+        logger.info(f"Validating data for {self.source_config.name}")
+        for batch in data:
+            yield self.validator.validate(batch)
 
     def write_data(self):
         logger.info(f"Writing data to stage_{self.source_config.name}")
@@ -41,9 +45,8 @@ class PipelineRunner:
         ):
             result = None
             try:
-                self.read_data()
-                self.validate_data()
-                self.write_data()
+                # Chain Iterators to Stream Batch Data
+                self.write_data(self.validate_data(self.read_data()))
                 self.audit_data()
                 self.publish_data()
             except Exception as e:
