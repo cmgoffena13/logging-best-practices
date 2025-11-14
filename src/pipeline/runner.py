@@ -1,8 +1,11 @@
 import logging
 
+from opentelemetry import trace
+
 from src.sources.base import SourceConfig
 
 logger = logging.getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 class PipelineRunner:
@@ -28,18 +31,21 @@ class PipelineRunner:
         logger.info(f"Publishing data for {self.source_config.name}")
 
     def run(self):
-        result = None
-        try:
-            self.read_data()
-            self.validate_data()
-            self.write_data()
-            self.audit_data()
-            self.publish_data()
-        except Exception as e:
-            logger.exception(
-                f"Error running pipeline for {self.source_config.name}: {e}"
-            )
-            result = (False, self.source_config.name)
+        with tracer.start_as_current_span(
+            f"Pipeline: {self.source_config.name}",
+        ):
+            result = None
+            try:
+                self.read_data()
+                self.validate_data()
+                self.write_data()
+                self.audit_data()
+                self.publish_data()
+            except Exception as e:
+                logger.exception(
+                    f"Error running pipeline for {self.source_config.name}: {e}"
+                )
+                result = (False, self.source_config.name)
+                return result
+            result = (True, self.source_config.name)
             return result
-        result = (True, self.source_config.name)
-        return result
